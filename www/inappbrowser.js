@@ -40,7 +40,9 @@
             'exit': channel.create('exit'),
             'customscheme': channel.create('customscheme'),
             'message': channel.create('message'),
-            'like': channel.create('like')
+            'like': channel.create('like'),
+            'save': channel.create('save'),
+            'share': channel.create('share')
         };
     }
 
@@ -96,6 +98,14 @@
             } else {
                 throw new Error('insertCSS requires exactly one of code or file to be specified');
             }
+        },
+
+        like: function(liked){
+            exec(null, null, 'InAppBrowser', 'like', [liked]);
+        },
+
+        save: function(saved){
+            exec(null, null, 'InAppBrowser', 'save', [saved]);
         }
     };
 

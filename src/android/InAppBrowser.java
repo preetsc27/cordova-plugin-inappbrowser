@@ -119,7 +119,6 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String FOOTER_COLOR = "footercolor";
     private static final String BEFORELOAD = "beforeload";
 
-    private static final String LIKE = "like";
 
     private static final List customizableOptions = Arrays.asList(CLOSE_BUTTON_CAPTION, TOOLBAR_COLOR, NAVIGATION_COLOR,
             CLOSE_BUTTON_COLOR, FOOTER_COLOR);
@@ -153,6 +152,14 @@ public class InAppBrowser extends CordovaPlugin {
     private String beforeload = "";
     private String[] allowedSchemes;
     private InAppBrowserClient currentClient;
+
+    // user call image button
+    private ImageButton likeBtn;
+    private ImageButton saveBtn;
+
+    private static final String LIKE = "like";
+    private static final String SAVE = "save";
+    private static final String SHARE = "share";
 
     /**
      * Executes the request and returns PluginResult.
@@ -335,7 +342,20 @@ public class InAppBrowser extends CordovaPlugin {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
             pluginResult.setKeepCallback(true);
             this.callbackContext.sendPluginResult(pluginResult);
-        } else {
+        } else if (action.equals("like")){
+            String imageName = "baseline_favorite_black_36";
+            if(args.getBoolean(0) == false){
+                imageName = "baseline_favorite_border_black_36";
+            }
+            changeImage(imageName, likeBtn);
+        } else if(action.equals("save")){
+            String imageName = "baseline_bookmark_black_36";
+            if(args.getBoolean(0) == false){
+                imageName = "baseline_bookmark_border_black_36";
+            }
+            changeImage(imageName, saveBtn);
+        }
+         else {
             return false;
         }
         return true;
@@ -936,8 +956,10 @@ public class InAppBrowser extends CordovaPlugin {
                 // Footer
                 // RelativeLayout footer = new RelativeLayout(cordova.getActivity());
                 LinearLayout footer = new LinearLayout(cordova.getActivity());
-                footer.setOrientation(LinearLayout.HORIZONTAL);
-                // footer.setGravity(Gravity.CENTER);
+                LinearLayout.LayoutParams footerLayout = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+                footer.setLayoutParams(footerLayout);
+                footer.setOrientation(LinearLayout.VERTICAL);
+
                 int _footerColor;
                 if (footerColor != "") {
                     _footerColor = Color.parseColor(footerColor);
@@ -945,21 +967,15 @@ public class InAppBrowser extends CordovaPlugin {
                     _footerColor = android.graphics.Color.WHITE;
                 }
                 footer.setBackgroundColor(_footerColor);
-                // RelativeLayout.LayoutParams footerLayout = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT,
-                //         this.dpToPixels(44));
-                // footerLayout.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-
-                LinearLayout.LayoutParams footerLayout = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-                // footer.setLayoutParams(footerLayout);
-                if (closeButtonCaption != "")
-                    footer.setPadding(this.dpToPixels(8), this.dpToPixels(8), this.dpToPixels(8), this.dpToPixels(8));
-                footer.setHorizontalGravity(Gravity.LEFT);
+                footer.setHorizontalGravity(Gravity.CENTER);
                 footer.setVerticalGravity(Gravity.BOTTOM);
 
-                View footerClose = createCloseButton(7);
-                footer.addView(footerClose);
-                Button likeBtn = new Button(cordova.getActivity());
-                likeBtn.setText("Like");
+                LinearLayout childFooter = new LinearLayout(cordova.getActivity());
+                LinearLayout.LayoutParams childParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                childFooter.setLayoutParams(childParams);
+                childFooter.setGravity(Gravity.CENTER);
+
+                likeBtn = createIB("baseline_favorite_black_36");
                 likeBtn.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         try {
@@ -971,16 +987,37 @@ public class InAppBrowser extends CordovaPlugin {
                         }
                     }
                 });
-                
-                footer.addView(likeBtn);
+                childFooter.addView(likeBtn);
 
-                Button saveBtn = new Button(cordova.getActivity());
-                saveBtn.setText("Save");
-                footer.addView(saveBtn);
+                saveBtn = createIB("baseline_bookmark_black_36");
+                saveBtn.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        try {
+                            JSONObject obj = new JSONObject();
+                            obj.put("type", SAVE);
+                            sendUpdate(obj, true);
+                        } catch (JSONException ex) {
+                            LOG.e(LOG_TAG, "Error on like button pressed.");
+                        }
+                    }
+                });
+                childFooter.addView(saveBtn);
 
-                Button shareBtn = new Button(cordova.getActivity());
-                shareBtn.setText("Share");
-                footer.addView(shareBtn);
+                ImageButton shareBtn = createIB("baseline_share_black_36");
+                shareBtn.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        try {
+                            JSONObject obj = new JSONObject();
+                            obj.put("type", SHARE);
+                            sendUpdate(obj, true);
+                        } catch (JSONException ex) {
+                            LOG.e(LOG_TAG, "Error on like button pressed.");
+                        }
+                    }
+                });
+                childFooter.addView(shareBtn);
+
+                footer.addView(childFooter);
 
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
@@ -1137,6 +1174,44 @@ public class InAppBrowser extends CordovaPlugin {
         this.cordova.getActivity().runOnUiThread(runnable);
         return "";
     }
+
+    /**
+     * Create an Image Button with default properties
+     * 
+     * @param imageName String - Enter the image name from drawable folder
+     * 
+     * @return ImageButton
+     */
+
+     private ImageButton createIB(String imageName){
+        Resources activityRes = cordova.getActivity().getResources();
+        int resId = activityRes.getIdentifier(imageName, "drawable", cordova.getActivity().getPackageName());        
+        ImageButton ib = new ImageButton(cordova.getActivity());
+        Drawable ibIcon = activityRes.getDrawable(resId);
+        ib.setImageDrawable(ibIcon);
+        ib.setColorFilter(android.graphics.Color.parseColor("#ea5824"));
+        ib.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ib.setAdjustViewBounds(true);
+        if (Build.VERSION.SDK_INT >= 16)
+            ib.getAdjustViewBounds();
+        if (Build.VERSION.SDK_INT >= 16)
+            ib.setBackground(null);
+        else
+            ib.setBackgroundDrawable(null);
+        return ib;
+     }
+
+     /**
+      * Change the image of the ImageButton
+      * @param imageName String - name of the image
+      * @param imageButton ImageButton 
+      */
+      private void changeImage(String imageName, ImageButton imageButton){
+        Resources activityRes = cordova.getActivity().getResources();
+        int resId = activityRes.getIdentifier(imageName, "drawable", cordova.getActivity().getPackageName());        
+        Drawable ibIcon = activityRes.getDrawable(resId);
+        imageButton.setImageDrawable(ibIcon);
+      }
 
     /**
      * Create a new plugin success result and send it back to JavaScript
