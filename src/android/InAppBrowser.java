@@ -161,6 +161,9 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String SAVE = "save";
     private static final String SHARE = "share";
 
+    private static final String INTERACTIONS = "interactions";
+    private boolean showInteractions = true;
+
     /**
      * Executes the request and returns PluginResult.
      *
@@ -677,6 +680,10 @@ public class InAppBrowser extends CordovaPlugin {
                 if (hideUrl != null)
                     hideUrlBar = hideUrl.equals("yes") ? true : false;
             }
+            String interactions = features.get(INTERACTIONS);
+            if(interactions != null){
+                showInteractions = interactions.equals("yes") ? true : false;
+            }
             String zoom = features.get(ZOOM);
             if (zoom != null) {
                 showZoomControls = zoom.equals("yes") ? true : false;
@@ -1153,7 +1160,8 @@ public class InAppBrowser extends CordovaPlugin {
 
                 // Add our webview to our main view/layout
                 main.addView(inAppWebView);
-                main.addView(footer);
+                if(showInteractions)
+                    main.addView(footer);
                
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
